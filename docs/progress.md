@@ -7,6 +7,13 @@ Reverse-chronological. Newest entry on top. Every change to the project adds an 
 
 ---
 
+## 2026-06-06 — CI: fix the push trigger
+
+- `ci.yml` listened on `main`, but the default branch is `master`, so direct pushes never ran
+  CI. Now triggers on `[master, main]`.
+
+---
+
 ## 2026-06-06 — Funding notes: trim public meta-commentary
 
 - Removed the BTC-address caveat from the README Support section (the donate badge + address stay).
