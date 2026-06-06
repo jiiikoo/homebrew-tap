@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-test:
+    name: build & test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Build
+        run: cargo build --locked --verbose
+      - name: Test
+        run: cargo test --locked --verbose
+
+  headless-vault:
+    name: headless vault fallback (no Secret Service)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build
+        run: cargo build --locked
+      - name: Store + retrieve a password via the age vault with no D-Bus session
+        env:
+          DBUS_SESSION_BUS_ADDRESS: ""
+          SSHELF_VAULT_PASSPHRASE: ci-test-pass
+        run: |
+          set -euo pipefail
+          BIN=target/debug/sshelf
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/cfg" XDG_DATA_HOME="$RUNNER_TEMP/data"
+          mkdir -p "$XDG_CONFIG_HOME/sshelf"
+          printf 'format_version = 1\n[[host]]\nid = "ci-host"\nname = "cibox"\nhostname = "127.0.0.1"\nuser = "tester"\nauth = "password"\n' \
+            > "$XDG_CONFIG_HOME/sshelf/hosts.toml"
+          echo "ci-secret" | "$BIN" set-password cibox
+          out=$(SSHELF_ASKPASS=1 SSHELF_HOST_ID=ci-host "$BIN" "tester's password: ")
+          test "$out" = "ci-secret"
+          echo "headless vault path OK"

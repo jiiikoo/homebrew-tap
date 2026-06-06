@@ -1,0 +1,68 @@
+[package]
+name = "sshelf"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "A TUI for managing and connecting to SSH hosts — generates the ssh command, never touches ~/.ssh/config."
+license = "MIT OR Apache-2.0"
+keywords = ["ssh", "tui", "terminal", "fuzzy", "ratatui"]
+categories = ["command-line-utilities"]
+repository = "https://github.com/max-rh/sshelf"
+homepage = "https://github.com/max-rh/sshelf"
+
+[dependencies]
+age = "0.10"
+anyhow = "1.0.102"
+arboard = { version = "3.6.1", default-features = false }
+clap = { version = "4.6.1", features = ["derive"] }
+clap_complete = "4.6.5"
+clap_mangen = "0.3.0"
+etcetera = "0.11.0"
+keyring = "3"  # backend enabled per-target below
+nucleo-matcher = "0.3.1"
+ratatui = "0.30.0"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+shlex = "2.0.1"
+ssh2-config = "0.7.1"
+thiserror = "2.0.18"
+toml = "1.1.2"
+ulid = "1.2.1"
+zeroize = "1.8.2"
+
+# Platform-native keyring backends (Keychain / Secret Service).
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3", features = ["apple-native"] }
+
+# Pure-Rust Secret Service (zbus) — no libdbus/OpenSSL/tokio C build deps.
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3", features = ["async-secret-service", "crypto-rust", "async-io"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3", features = ["windows-native"] }
+
+# Debian/Ubuntu package metadata (used by `cargo deb`). Completions + man page are generated
+# in CI (see .github/workflows/release-deb.yml) and shipped via the asset paths below.
+[package.metadata.deb]
+# Shipped publicly in every .deb — this is a dedicated public alias, not a personal inbox.
+maintainer = "max-rh <max-rh@mail.com>"
+copyright = "2026, sshelf contributors"
+license-file = ["LICENSE-MIT", "0"]
+extended-description = """
+A terminal UI for managing and connecting to SSH hosts. Saves each host once and generates
+the correct ssh command — it never reads or edits ~/.ssh/config (except a read-only import)."""
+section = "utils"
+priority = "optional"
+# $auto resolves libc; we exec ssh, and recommend a Secret Service daemon (the age vault is a
+# fallback, so it's a Recommends not a Depends).
+depends = "$auto, openssh-client"
+recommends = "gnome-keyring"
+assets = [
+    ["target/release/sshelf", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/sshelf/README.md", "644"],
+    ["SECURITY.md", "usr/share/doc/sshelf/SECURITY.md", "644"],
+    ["dist-extra/sshelf.bash", "usr/share/bash-completion/completions/sshelf", "644"],
+    ["dist-extra/_sshelf", "usr/share/zsh/vendor-completions/_sshelf", "644"],
+    ["dist-extra/sshelf.fish", "usr/share/fish/vendor_completions.d/sshelf.fish", "644"],
+    ["dist-extra/sshelf.1", "usr/share/man/man1/sshelf.1", "644"],
+]

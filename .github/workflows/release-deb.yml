@@ -1,0 +1,50 @@
+# Builds Debian/Ubuntu .deb packages (amd64 + arm64) on a version tag and attaches them to the
+# GitHub Release. dist (cargo-dist) builds the tarballs + Homebrew + shell installer; this
+# companion covers the .deb that dist doesn't build. Both upsert the same `v*` release.
+name: release-deb
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # to attach assets to the Release
+
+jobs:
+  deb:
+    name: .deb (${{ matrix.arch }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: amd64, os: ubuntu-22.04 } # x86_64
+          - { arch: arm64, os: ubuntu-24.04-arm } # native arm64 (free on public repos)
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-deb
+        run: cargo install cargo-deb --locked
+
+      - name: Build (host arch)
+        run: cargo build --release --locked
+
+      - name: Generate completions + man page
+        run: |
+          set -euo pipefail
+          bin=target/release/sshelf
+          mkdir -p dist-extra
+          "$bin" completions bash > dist-extra/sshelf.bash
+          "$bin" completions zsh  > dist-extra/_sshelf
+          "$bin" completions fish > dist-extra/sshelf.fish
+          "$bin" man              > dist-extra/sshelf.1
+
+      # --no-build reuses the binary we just built; the .deb arch matches the runner arch.
+      - name: Build .deb
+        run: cargo deb --no-build
+
+      - name: Attach to the Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/debian/*.deb

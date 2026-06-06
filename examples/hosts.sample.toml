@@ -1,0 +1,45 @@
+# Sample sshelf host database.
+# Copy to your config dir to try it:  ~/.config/sshelf/hosts.toml
+# (sshelf normally manages this file for you via the add/edit wizard.)
+#
+# NOTE: passwords are NEVER stored here. `auth = "password"` only records that a host
+# uses password auth; the secret lives in the OS keyring / encrypted vault.
+
+format_version = 1
+
+[[host]]
+id = "01J0SAMPLE000000000000WEB1"
+name = "prod-web"
+hostname = "10.25.25.10"
+user = "deploy"
+auth = "key"
+identity_files = ["~/.ssh/infra-key"]
+tags = ["prod", "web"]
+
+[[host]]
+id = "01J0SAMPLE000000000000DB01"
+name = "prod-db"
+hostname = "10.25.25.25"
+user = "mike"
+port = 5432
+auth = "agent"
+tags = ["prod", "db"]
+
+[[host]]
+id = "01J0SAMPLE0000000000BASTION"
+name = "bastion"
+hostname = "bastion.example.com"
+user = "ops"
+auth = "key"
+identity_files = ["~/.ssh/bastion-key"]
+tags = ["infra"]
+
+[[host]]
+id = "01J0SAMPLE00000000000APPBOX"
+name = "app-behind-jump"
+hostname = "10.0.5.7"
+user = "app"
+auth = "agent"
+jump_hosts = ["bastion.example.com"]
+extra_args = "-o ServerAliveInterval=30"
+tags = ["prod", "app"]
