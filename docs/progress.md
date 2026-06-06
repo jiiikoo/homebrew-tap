@@ -7,6 +7,20 @@ Reverse-chronological. Newest entry on top. Every change to the project adds an 
 
 ---
 
+## 2026-06-06 — Release pipeline: dist (cargo-dist) wired up
+
+- `dist init`: shell + Homebrew installers, 4 Unix targets (mac + linux × x86_64/arm64),
+  `install-updater = false`. Added `release.yml`, `dist-workspace.toml`, and `[profile.dist]`.
+- Dropped the `x86_64-pc-windows-msvc` target dist added by default — sshelf is Unix-only
+  (the connect path uses `exec()`), so a Windows build can't compile.
+- Reworked `release-deb.yml` to run via `workflow_run` after the dist `Release` workflow
+  finishes, attaching the `.deb`s to the release dist creates — avoids both workflows racing
+  to create the same release.
+- Before tagging: create the `max-rh/homebrew-tap` repo + a `HOMEBREW_TAP_TOKEN` secret (PAT)
+  so the Homebrew formula can be published.
+
+---
+
 ## 2026-06-06 — CI: fix the push trigger
 
 - `ci.yml` listened on `main`, but the default branch is `master`, so direct pushes never ran

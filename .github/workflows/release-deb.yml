@@ -1,11 +1,19 @@
-# Builds Debian/Ubuntu .deb packages (amd64 + arm64) on a version tag and attaches them to the
-# GitHub Release. dist (cargo-dist) builds the tarballs + Homebrew + shell installer; this
-# companion covers the .deb that dist doesn't build. Both upsert the same `v*` release.
+# Builds Debian/Ubuntu .deb packages (amd64 + arm64) and attaches them to the GitHub Release.
+# dist (cargo-dist) owns release creation (tarballs + Homebrew + shell installer); this runs
+# *after* the dist "Release" workflow finishes and adds the .deb assets that dist doesn't build.
+#
+# Why workflow_run (not the same `v*` tag, and not `on: release`):
+#   - Sharing the tag trigger races dist for who creates the Release; if this wins, dist's
+#     `gh release create` then errors out.
+#   - `on: release: published` wouldn't fire: dist creates the release with GITHUB_TOKEN, and
+#     releases created by GITHUB_TOKEN don't trigger downstream workflows (anti-recursion rule).
+# So we wait for the "Release" workflow to complete, then attach.
 name: release-deb
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
 
 permissions:
   contents: write # to attach assets to the Release
@@ -13,6 +21,11 @@ permissions:
 jobs:
   deb:
     name: .deb (${{ matrix.arch }})
+    # Only after a successful, tag-triggered Release run. head_branch is the tag (e.g. v0.1.0).
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'v')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -22,6 +35,8 @@ jobs:
           - { arch: arm64, os: ubuntu-24.04-arm } # native arm64 (free on public repos)
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }} # the release tag
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-deb
@@ -47,4 +62,5 @@ jobs:
       - name: Attach to the Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.workflow_run.head_branch }}
           files: target/debian/*.deb

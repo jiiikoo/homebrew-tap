@@ -41,6 +41,11 @@ keyring = { version = "3", features = ["async-secret-service", "crypto-rust", "a
 [target.'cfg(target_os = "windows")'.dependencies]
 keyring = { version = "3", features = ["windows-native"] }
 
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
 # Debian/Ubuntu package metadata (used by `cargo deb`). Completions + man page are generated
 # in CI (see .github/workflows/release-deb.yml) and shipped via the asset paths below.
 [package.metadata.deb]
