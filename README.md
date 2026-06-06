@@ -102,10 +102,6 @@ If sshelf is useful to you, a Bitcoin tip is appreciated (entirely optional):
 
 **Bitcoin:** `bc1qcdeyhpwq76u97dhymx876n49uq85z4y3ccrpje`
 
-> Use a **dedicated** BTC address (not one tied to a KYC exchange or your main wallet) — a public
-> address is permanently visible on-chain and linkable to this project. (GitHub Sponsors may be
-> added later.)
-
 ## License
 
 Dual-licensed under either [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option —

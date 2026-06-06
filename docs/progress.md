@@ -7,6 +7,12 @@ Reverse-chronological. Newest entry on top. Every change to the project adds an 
 
 ---
 
+## 2026-06-06 — README: trim Support section
+
+- Removed the BTC-address caveat from the Support section (the donate badge + address stay).
+
+---
+
 ## 2026-06-06 — Docs: contributor guide + naming polish
 
 - Adopted **`CONTRIBUTING.md`** as the contributor guide (GitHub-conventional name) and
