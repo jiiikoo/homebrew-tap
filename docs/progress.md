@@ -3,7 +3,14 @@
 Reverse-chronological. Newest entry on top. Every change to the project adds an entry here
 (the docs-in-sync rule). Keep entries short: what changed, why, and what's next.
 
-**Current milestone:** v1 feature-complete (M0–M8). Remaining = the acceptance gates below.
+**Current milestone:** v0.2.0 (CLI direct-connect + list filter). v1 acceptance gates closed.
+
+---
+
+## 2026-06-07 — Release v0.2.0
+
+- Cut **v0.2.0**: ships the `sshelf <host>` direct-connect and `sshelf list <query>` filter
+  (below). Tagging `v0.2.0` republishes brew / shell installer / `.deb` via dist.
 
 ---
 
