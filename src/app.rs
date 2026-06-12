@@ -395,24 +395,33 @@ impl App {
 }
 
 /// Set up the terminal, run the loop, restore the terminal, then (if a host was chosen)
-/// perform the `exec()` handoff into ssh.
+/// perform the connect handoff. When `return_to_sshelf` is enabled in config, spawn ssh
+/// as a child (so this process survives) and re-launch the TUI after the session ends.
+/// When disabled, `exec()` replaces this process with ssh (original behaviour).
 pub fn run() -> Result<()> {
     let paths = Paths::resolve()?;
     paths.ensure_dirs()?;
     let _ = Config::ensure_default_file(&paths.config_file()); // best-effort
-    let config = Config::load(&paths.config_file())?;
-    let hosts = store::load_hosts(&config.hosts_path(&paths))?.hosts;
-    let state = FrecencyState::load(&paths.state_file())?;
-    let mut app = App::new(hosts, state, config, paths);
 
-    let mut terminal = ratatui::init();
-    let loop_result = event_loop(&mut terminal, &mut app);
-    ratatui::restore();
-    loop_result?;
+    loop {
+        // Reload config and hosts on every iteration so changes take effect between sessions.
+        let config = Config::load(&paths.config_file())?;
+        let hosts = store::load_hosts(&config.hosts_path(&paths))?.hosts;
+        let state = FrecencyState::load(&paths.state_file())?;
+        let mut app = App::new(hosts, state, config, paths.clone());
 
-    if let Some(idx) = app.pending_connect {
+        let mut terminal = ratatui::init();
+        let loop_result = event_loop(&mut terminal, &mut app);
+        ratatui::restore();
+        loop_result?;
+
+        let Some(idx) = app.pending_connect else {
+            // User quit without connecting.
+            break;
+        };
+
         let host = app.hosts[idx].clone();
-        // Persist usage BEFORE exec() — nothing runs after a successful exec.
+        // Persist usage BEFORE the session — on exec() nothing runs after.
         app.state.record_use(&host.id);
         if let Err(e) = app.state.save(&app.paths.state_file()) {
             eprintln!("sshelf: warning: could not save state: {e:#}");
@@ -423,9 +432,19 @@ pub fn run() -> Result<()> {
             .ok()
             .flatten()
             .is_some();
-        // Replaces this process on success; returns only on failure.
-        return Err(ssh::exec_connect(&host, has_secret));
+
+        if app.config.return_to_sshelf {
+            // Spawn ssh as a child and wait; this process stays alive so we can loop.
+            if let Err(e) = ssh::spawn_connect(&host, has_secret) {
+                eprintln!("sshelf: {e:#}");
+            }
+            // Loop back to re-launch the TUI.
+        } else {
+            // Original behaviour: replace this process with ssh via exec().
+            return Err(ssh::exec_connect(&host, has_secret));
+        }
     }
+
     Ok(())
 }
 

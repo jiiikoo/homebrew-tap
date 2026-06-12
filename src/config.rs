@@ -30,6 +30,9 @@ pub struct Config {
     /// Custom host-database path. `None` = the default under the config dir.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hosts_file: Option<String>,
+    /// When `true`, sshelf re-launches the TUI automatically after an SSH session ends
+    /// instead of dropping back to the shell. Default: false.
+    pub return_to_sshelf: bool,
 }
 
 impl Default for Config {
@@ -39,6 +42,7 @@ impl Default for Config {
             default_sort: Sort::default(),
             accent: "cyan".to_string(),
             hosts_file: None,
+            return_to_sshelf: false,
         }
     }
 }
@@ -55,6 +59,10 @@ default_sort = \"frecency\"
 
 # Accent color: black red green yellow blue magenta cyan white gray
 accent = \"cyan\"
+
+# Return to the sshelf TUI automatically after an SSH session ends.
+# Set to true to re-launch the list instead of dropping to the shell.
+return_to_sshelf = false
 ";
 
 impl Config {

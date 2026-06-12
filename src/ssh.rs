@@ -102,6 +102,21 @@ pub fn exec_connect(host: &Host, wire_askpass: bool) -> anyhow::Error {
     }
 }
 
+/// Spawn `ssh` as a child process and wait for it to finish, then return.
+/// Unlike `exec_connect`, this keeps the sshelf process alive so the TUI can be
+/// re-launched afterwards. The caller must have already restored the terminal before
+/// calling this, and must re-initialise it afterwards if it wants to show the TUI again.
+pub fn spawn_connect(host: &Host, wire_askpass: bool) -> anyhow::Result<std::process::ExitStatus> {
+    let args = build_args(host, true);
+    let mut cmd = std::process::Command::new("ssh");
+    cmd.args(&args);
+    configure_askpass(&mut cmd, host, wire_askpass);
+    let status = cmd
+        .status()
+        .map_err(|e| anyhow::anyhow!("failed to launch ssh: {e}"))?;
+    Ok(status)
+}
+
 /// Wire our own binary as the `SSH_ASKPASS` helper so the stored secret (a login password OR
 /// a key passphrase) is supplied automatically. Only when `wire_askpass` is set (a secret
 /// exists); otherwise clear any inherited askpass so ssh prompts / uses the agent normally.

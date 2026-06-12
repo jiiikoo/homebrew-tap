@@ -12,6 +12,7 @@ use std::path::{Path, PathBuf};
 pub const CONFIG_ENV: &str = "SSHELF_CONFIG";
 const APP_DIR: &str = "sshelf";
 
+#[derive(Clone)]
 pub struct Paths {
     pub config_dir: PathBuf,
     pub data_dir: PathBuf,
