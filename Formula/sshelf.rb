@@ -2,7 +2,7 @@ class Sshelf < Formula
   desc "Fast terminal UI for managing and connecting to SSH hosts"
   homepage "https://github.com/jiiikoo/sshelf"
   url "https://github.com/jiiikoo/sshelf/archive/refs/tags/v0.2.0-jiiikoo.tar.gz"
-  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+  sha256 "f21a3d886264ff375f45b49fc9b7bde8ae3d07dba3e809fb769cf6a9037d9fa0"
   license "MIT"
 
   depends_on "rust" => :build
